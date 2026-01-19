@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tapintu - Hive Posts Display</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .post-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+        }
+        .post-content p {
+            margin-bottom: 1rem;
+        }
+        .post-content a {
+            color: #3b82f6;
+            text-decoration: underline;
+        }
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+    <!-- Header -->
+    <header class="bg-white shadow-lg">
+        <div class="container mx-auto px-4 py-12">
+            <div class="flex justify-center">
+                <img src="/assets/tapintu.png" alt="Tapintu" class="h-52">
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Info Section -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8 transition-colors duration-200">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">
+                        <i class="fas fa-users text-blue-600 mr-2"></i>
+                        Posts powered by @commentrewarder
+                    </h2>
+                    <p class="text-sm text-gray-600 dark:text-gray-300">
+                        Posts that reward comments, Creators supporting Engagement.
+                    </p>
+                </div>
+                <div class="flex space-x-2">
+                    <button 
+                        id="dark-mode-toggle" 
+                        class="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition duration-200 shadow-md"
+                        title="Toggle dark mode">
+                        <i class="fas fa-moon" id="dark-mode-icon"></i>
+                    </button>
+                    <button 
+                        id="refresh-feed" 
+                        class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200 shadow-md">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loading" class="hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 mb-8 transition-colors duration-200">
+                <div class="flex flex-col items-center">
+                    <div class="loader mb-4"></div>
+                    <p class="text-gray-700 dark:text-gray-100 text-lg font-medium mb-3">Fetching posts from the commentrewarder community...</p>
+                    <p class="text-gray-600 dark:text-gray-300 text-center max-w-md">
+                        This may take a minute while we check ~100 accounts. <br>
+                        Sit back, relax, maybe grab a coffee ☕
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Posts Container -->
+        <div id="posts-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Posts will be loaded here -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="hidden text-center py-12">
+            <i class="fas fa-inbox text-6xl text-gray-300 dark:text-gray-600 mb-4"></i>
+            <p class="text-gray-500 dark:text-gray-400 text-lg">No posts found with commentrewarder beneficiary</p>
+        </div>
+    </main>
+
+    <!-- Post Modal -->
+    <div id="post-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 overflow-y-auto">
+        <div class="min-h-screen px-4 py-8">
+            <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl mx-auto transition-colors duration-200">
+                <!-- Close Button -->
+                <button 
+                    id="close-modal" 
+                    class="absolute top-4 right-4 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-2xl">
+                    <i class="fas fa-times"></i>
+                </button>
+                
+                <!-- Modal Content -->
+                <div id="modal-content" class="p-8">
+                    <!-- Post details will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-6 mt-12">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-sm mb-3">
+                <i class="fas fa-heart text-red-500 mr-1"></i>
+                Built with love by <a href="https://hive.blog/@meno" target="_blank" class="text-blue-400 hover:text-blue-300">@meno</a> and <a href="https://hive.blog/@ankapolo" target="_blank" class="text-blue-400 hover:text-blue-300">@ankapolo</a>
+            </p>
+            <a href="https://vote.hive.uno/@snapie" target="_blank" class="text-purple-400 hover:text-purple-300 text-sm font-medium">
+                <i class="fas fa-vote-yea mr-1"></i>
+                Support @snapie for witness
+            </a>
+            <p class="text-xs text-gray-400 mt-3">Powered by Hive Blockchain</p>
+        </div>
+    </footer>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>
