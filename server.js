@@ -10,6 +10,7 @@ const HIVE_API_URL = process.env.HIVE_API_URL || 'https://api.syncad.com';
 // Middleware
 app.use(express.json());
 app.use(express.static('public'));
+app.use('/assets', express.static('assets'));
 
 // API Routes
 

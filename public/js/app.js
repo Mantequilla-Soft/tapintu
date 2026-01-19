@@ -41,6 +41,7 @@ class TapintuApp {
         if (darkMode) {
             document.documentElement.classList.add('dark');
             document.getElementById('dark-mode-icon').className = 'fas fa-sun';
+            this.updateLogo(true);
         }
     }
 
@@ -49,6 +50,14 @@ class TapintuApp {
         localStorage.setItem('darkMode', isDark);
         const icon = document.getElementById('dark-mode-icon');
         icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+        this.updateLogo(isDark);
+    }
+
+    updateLogo(isDark) {
+        const logo = document.getElementById('logo-image');
+        if (logo) {
+            logo.src = isDark ? '/assets/tapintu-dark.png' : '/assets/tapintu.png';
+        }
     }
 
     showLoading() {
@@ -122,10 +131,7 @@ class TapintuApp {
                 </div>
             ` : ''}
             <div class="p-6">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-xs font-semibold text-blue-600 bg-blue-100 dark:bg-blue-900 dark:text-blue-300 px-3 py-1 rounded-full">
-                        ${this.escapeHtml(post.category)}
-                    </span>
+                <div class="flex items-center justify-end mb-3">
                     <span class="text-xs font-semibold text-green-600 bg-green-100 dark:bg-green-900 dark:text-green-300 px-3 py-1 rounded-full">
                         <i class="fas fa-check-circle mr-1"></i>commentrewarder ${beneficiaryPercent}%
                     </span>
