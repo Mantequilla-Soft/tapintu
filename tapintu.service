@@ -1,0 +1,25 @@
+[Unit]
+Description=Tapintu - Blogmaxxing Tools for Hive
+After=network.target
+
+[Service]
+Type=simple
+User=meno
+WorkingDirectory=/home/meno/Documents/menosoft/tapintu
+Environment=NODE_ENV=production
+EnvironmentFile=/home/meno/Documents/menosoft/tapintu/.env
+ExecStart=/usr/bin/node /home/meno/Documents/menosoft/tapintu/server.js
+Restart=always
+RestartSec=10
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tapintu
+
+[Install]
+WantedBy=multi-user.target
