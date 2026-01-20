@@ -341,14 +341,23 @@ class TapintuApp {
     }
 
     renderMarkdown(markdown) {
-        // Basic markdown to HTML conversion
-        let html = markdown;
+        // Basic markdown to HTML conversion with XSS protection
+        // First, escape all HTML to prevent XSS attacks
+        let html = this.escapeHtml(markdown);
         
-        // Images
-        html = html.replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1">');
+        // Images - sanitize URLs
+        html = html.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, url) => {
+            const sanitizedUrl = this.sanitizeUrl(url);
+            const sanitizedAlt = alt; // already escaped by escapeHtml
+            return `<img src="${sanitizedUrl}" alt="${sanitizedAlt}">`;
+        });
         
-        // Links
-        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+        // Links - sanitize URLs
+        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
+            const sanitizedUrl = this.sanitizeUrl(url);
+            const sanitizedText = text; // already escaped by escapeHtml
+            return `<a href="${sanitizedUrl}" target="_blank" rel="noopener noreferrer">${sanitizedText}</a>`;
+        });
         
         // Bold
         html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
@@ -362,6 +371,20 @@ class TapintuApp {
         html = html.split('\n\n').map(para => `<p>${para.replace(/\n/g, '<br>')}</p>`).join('');
         
         return html;
+    }
+
+    sanitizeUrl(url) {
+        // Prevent javascript: and data: URLs to avoid XSS
+        const trimmedUrl = url.trim();
+        const lowerUrl = trimmedUrl.toLowerCase();
+        
+        if (lowerUrl.startsWith('javascript:') || 
+            lowerUrl.startsWith('data:') || 
+            lowerUrl.startsWith('vbscript:')) {
+            return '#'; // Return safe fallback
+        }
+        
+        return trimmedUrl;
     }
 
     closeModal() {
