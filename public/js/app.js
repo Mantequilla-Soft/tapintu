@@ -6,8 +6,6 @@ class TapintuApp {
         this.postsContainer = document.getElementById('posts-container');
         this.loadingIndicator = document.getElementById('loading');
         this.emptyState = document.getElementById('empty-state');
-        this.postModal = document.getElementById('post-modal');
-        this.modalContent = document.getElementById('modal-content');
         
         this.initEventListeners();
         this.loadFeed();
@@ -20,16 +18,6 @@ class TapintuApp {
 
         document.getElementById('dark-mode-toggle').addEventListener('click', () => {
             this.toggleDarkMode();
-        });
-
-        document.getElementById('close-modal').addEventListener('click', () => {
-            this.closeModal();
-        });
-
-        this.postModal.addEventListener('click', (e) => {
-            if (e.target === this.postModal) {
-                this.closeModal();
-            }
         });
 
         // Initialize dark mode from localStorage
@@ -73,21 +61,49 @@ class TapintuApp {
     async loadFeed() {
         try {
             this.showLoading();
-            const response = await fetch('/api/feed');
-            const posts = await response.json();
-            this.displayPosts(posts);
+            this.eventSource = new EventSource('/api/feed');
+            
+            this.eventSource.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                
+                if (data.done) {
+                    this.eventSource.close();
+                    this.hideLoading();
+                    console.log('Feed streaming complete');
+                } else if (data.post) {
+                    // Add post to feed as it arrives
+                    this.addPostToFeed(data.post);
+                }
+            };
+            
+            this.eventSource.onerror = (error) => {
+                console.error('Feed stream error:', error);
+                this.eventSource.close();
+                this.hideLoading();
+                this.showError('Failed to load feed. Please try again.');
+            };
         } catch (error) {
             console.error('Error loading feed:', error);
-            this.showError('Failed to load feed');
-        } finally {
+            this.showError('Failed to load feed. Please try again.');
             this.hideLoading();
         }
+    }
+    
+    addPostToFeed(post) {
+        // Initialize empty state on first post
+        if (this.postsContainer.innerHTML === '') {
+            this.emptyState.classList.add('hidden');
+            this.hideLoading();
+        }
+        
+        const postCard = this.createPostCard(post);
+        this.postsContainer.appendChild(postCard);
     }
 
     displayPosts(posts) {
         this.postsContainer.innerHTML = '';
         
-        if (!posts || posts.length === 0) {
+        if (!Array.isArray(posts) || posts.length === 0) {
             this.emptyState.classList.remove('hidden');
             return;
         }
@@ -195,10 +211,6 @@ class TapintuApp {
             </div>
         `;
 
-        card.addEventListener('click', () => {
-            this.openPostModal(post.author, post.permlink);
-        });
-
         return card;
     }
 
@@ -264,131 +276,6 @@ class TapintuApp {
         
         const total = pendingPayout + totalPayout + curatorPayout;
         return isNaN(total) ? '0.00' : total.toFixed(2);
-    }
-
-    async openPostModal(author, permlink) {
-        try {
-            this.postModal.classList.remove('hidden');
-            this.modalContent.innerHTML = '<div class="flex justify-center py-12"><div class="loader"></div></div>';
-            
-            const response = await fetch(`/api/post/${author}/${permlink}`);
-            const post = await response.json();
-            
-            this.displayPostDetails(post);
-        } catch (error) {
-            console.error('Error loading post details:', error);
-            this.modalContent.innerHTML = '<p class="text-red-600">Failed to load post details</p>';
-        }
-    }
-
-    displayPostDetails(post) {
-        const date = new Date(post.created).toLocaleString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-
-        const hasBeneficiary = this.checkCommentrewarderBeneficiary(post);
-
-        this.modalContent.innerHTML = `
-            <div class="mb-6">
-                ${hasBeneficiary ? `
-                    <div class="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                        <span class="text-sm text-green-800">
-                            <i class="fas fa-check-circle mr-2"></i>
-                            This post supports <strong>commentrewarder</strong> as beneficiary
-                        </span>
-                    </div>
-                ` : ''}
-                <div class="flex items-center justify-between mb-4">
-                    <span class="text-sm font-semibold text-blue-600 bg-blue-100 px-3 py-1 rounded-full">
-                        ${this.escapeHtml(post.category)}
-                    </span>
-                    <span class="text-sm text-gray-500">${date}</span>
-                </div>
-                <h1 class="text-3xl font-bold text-gray-900 mb-4">
-                    ${this.escapeHtml(post.title)}
-                </h1>
-                <div class="flex items-center space-x-4 mb-6">
-                    <div class="flex items-center space-x-2 text-gray-700">
-                        <i class="fas fa-user-circle text-xl"></i>
-                        <span class="font-medium">@${this.escapeHtml(post.author)}</span>
-                    </div>
-                    <div class="flex items-center space-x-4 text-sm text-gray-600">
-                        <span><i class="fas fa-arrow-up text-green-600 mr-1"></i>${post.net_votes}</span>
-                        <span><i class="fas fa-comment text-gray-600 mr-1"></i>${post.children}</span>
-                        <span class="font-semibold text-blue-600">$${this.calculatePayout(post)}</span>
-                    </div>
-                </div>
-            </div>
-            <div class="prose max-w-none post-content mb-6">
-                ${this.renderMarkdown(post.body)}
-            </div>
-            <div class="flex items-center justify-between pt-6 border-t border-gray-200">
-                <a href="https://hive.blog/@${post.author}/${post.permlink}" 
-                   target="_blank" 
-                   class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200">
-                    <i class="fas fa-external-link-alt mr-2"></i>View on Hive.blog
-                </a>
-                <div class="text-sm text-gray-500">
-                    <i class="fas fa-tag mr-1"></i>
-                    ${post.category}
-                </div>
-            </div>
-        `;
-    }
-
-    renderMarkdown(markdown) {
-        // Basic markdown to HTML conversion with XSS protection
-        // First, escape all HTML to prevent XSS attacks
-        let html = this.escapeHtml(markdown);
-        
-        // Images - sanitize URLs
-        html = html.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, url) => {
-            const sanitizedUrl = this.sanitizeUrl(url);
-            const sanitizedAlt = alt; // already escaped by escapeHtml
-            return `<img src="${sanitizedUrl}" alt="${sanitizedAlt}">`;
-        });
-        
-        // Links - sanitize URLs
-        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
-            const sanitizedUrl = this.sanitizeUrl(url);
-            const sanitizedText = text; // already escaped by escapeHtml
-            return `<a href="${sanitizedUrl}" target="_blank" rel="noopener noreferrer">${sanitizedText}</a>`;
-        });
-        
-        // Bold
-        html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-        html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
-        
-        // Italic
-        html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
-        html = html.replace(/_(.+?)_/g, '<em>$1</em>');
-        
-        // Paragraphs
-        html = html.split('\n\n').map(para => `<p>${para.replace(/\n/g, '<br>')}</p>`).join('');
-        
-        return html;
-    }
-
-    sanitizeUrl(url) {
-        // Prevent javascript: and data: URLs to avoid XSS
-        const trimmedUrl = url.trim();
-        const lowerUrl = trimmedUrl.toLowerCase();
-        
-        if (lowerUrl.startsWith('javascript:') || 
-            lowerUrl.startsWith('data:') || 
-            lowerUrl.startsWith('vbscript:')) {
-            return '#'; // Return safe fallback
-        }
-        
-        return trimmedUrl;
-    }
-
-    closeModal() {
-        this.postModal.classList.add('hidden');
     }
 
     showError(message) {
